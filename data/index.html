@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WiFi Configuration</title>
+  <script>
+    function scanNetworks() {
+      fetch('/scan')
+        .then(response => response.json())
+        .then(data => {
+          let dropdown = document.getElementById('ssidSelect');
+          dropdown.length = 0;
+          let defaultOption = document.createElement('option');
+          defaultOption.text = 'Select a network';
+          dropdown.add(defaultOption);
+          data.forEach(ssid => {
+            let option = document.createElement('option');
+            option.text = ssid;
+            option.value = ssid;
+            dropdown.add(option);
+          });
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function updateSSIDField() {
+      let selectedSSID = document.getElementById('ssidSelect').value;
+      document.getElementById('ssid').value = selectedSSID;
+    }
+
+    function connectToNetwork() {
+      let ssid = document.getElementById('ssid').value;
+      let pass = document.getElementById('pass').value;
+
+      fetch('/setWiFi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `ssid=${encodeURIComponent(ssid)}&pass=${encodeURIComponent(pass)}`
+      })
+      .then(response => response.text())
+      .then(data => alert(data))
+      .catch(error => console.error('Error:', error));
+    }
+
+    function fetchWiFiStatus() {
+      fetch('/wifiStatus')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('connectedNetwork').textContent = data.ssid;
+          document.getElementById('ipAddress').textContent = data.ip;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function toggleLED() {
+      fetch('/toggleLED')
+        .then(response => response.text())
+        .then(data => {
+          //alert(data);
+        });
+    }
+
+
+    window.onload = function() {
+      scanNetworks();
+      fetchWiFiStatus();  // Fetch and display the current Wi-Fi status
+    };
+  </script>
+</head>
+<body>
+  <h1>WiFi Configuration</h1>
+  <form onsubmit="connectToNetwork(); return false;">
+    <label for="ssid">SSID:</label><br>
+    <select id="ssidSelect" name="ssidSelect" onchange="updateSSIDField()">
+      <option>Select a network</option>
+    </select><br><br>
+    <input type="text" id="ssid" name="ssid" placeholder="Or enter SSID manually"><br><br>
+    <label for="pass">Password:</label><br>
+    <input type="password" id="pass" name="pass"><br><br>
+    <input type="submit" value="Connect">
+  </form>
+
+  <div class="container">
+    <h2>On-Board Led Control</h2>
+    <button onclick="toggleLED()">Toggle LED</button>
+  </div>
+
+  <h2>Current WiFi Status</h2>
+  <p>Connected Network: <span id="connectedNetwork">Not connected</span></p>
+  <p>IP Address: <span id="ipAddress">N/A</span></p>
+</body>
+</html>
